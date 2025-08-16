@@ -1,26 +1,108 @@
-@import "tailwindcss";
+/* Waybinder base styles + brand tokens */
 
+/* Brand tokens */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --midnight: #0B1020;
+  --panel: #11162A;
+  --ink: #EAF0FF;
+  --indigo: #1746D7;
+  --sky: #6EA8FE;
+  --aqua: #B8F1FF;
+  --mint: #7AF0C7;
+
+  /* Default (dark) theme values */
+  --bg: var(--midnight);
+  --fg: var(--ink);
+  --card-bg: var(--panel);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --brand: var(--sky);
+  --accent: var(--mint);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Light theme overrides (we’ll add a toggle next step) */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --fg: #0B1020;
+  --card-bg: #F6F8FF;
+  --card-border: rgba(10, 20, 40, 0.08);
+  --brand: var(--indigo);
+  --accent: var(--indigo);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Base reset-ish */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Layout helpers */
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header shell we’ll use soon */
+.wb-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--card-border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+}
+.wb-logo {
+  height: 28px;
+  width: auto;
+}
+.wb-title {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Card look for sections */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+}
+
+.card h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: var(--brand);
+}
+
+.card p { margin: 0; line-height: 1.6; }
+
+/* Simple link style */
+a { color: var(--brand); text-decoration: none; }
+a:hover { opacity: 0.9; }
+
+/* Button base */
+.button {
+  cursor: pointer;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.button.brand {
+  background: var(--brand);
+  color: #0B1020;
+  border-color: transparent;
+}
+
