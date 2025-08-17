@@ -40,7 +40,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: var(--font-ui), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -52,7 +52,7 @@ body {
   padding: 24px;
 }
 
-/* Header shell we’ll use soon */
+/* Header shell */
 .wb-header {
   display: flex;
   align-items: center;
@@ -72,7 +72,15 @@ body {
   padding: 20px;
   box-shadow: 0 10px 24px rgba(0,0,0,0.25);
 }
-.card h2 { margin: 0 0 8px 0; font-size: 18px; color: var(--brand); }
+
+.card h2 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: var(--brand);
+  font-family: var(--font-headline), Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.2px;
+}
+
 .card p { margin: 0; line-height: 1.6; }
 
 /* Links and buttons */

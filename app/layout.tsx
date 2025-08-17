@@ -1,13 +1,18 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import Header from './components/Header';
+import { ui, headline } from './fonts'; // fonts.ts coming next
 
 export const metadata: Metadata = {
   title: 'Waybinder',
   description: 'Designer-grade guest guides in minutes.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <head>
@@ -24,7 +29,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body>
+      {/* Apply font CSS variables from next/font */}
+      <body className={`${ui.variable} ${headline.variable}`}>
         <Header />
         <main className="container">{children}</main>
       </body>
