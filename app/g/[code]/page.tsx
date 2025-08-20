@@ -1,5 +1,6 @@
 import SectionCard from "../../components/SectionCard";
 import StatusBanner from "../../components/StatusBanner";
+import OfflineBadge from "../../components/OfflineBadge";
 
 export default async function GuidePage({
   params,
@@ -13,12 +14,12 @@ export default async function GuidePage({
   const token = typeof sp.token === "string" ? sp.token : "";
   const pin = typeof sp.pin === "string" ? sp.pin : "";
 
-  // Demo expiry: 3 days from now
   const untilISO = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
   return (
     <>
-      {/* Status banner (auto-hides after the "until" time) */}
+      <OfflineBadge />
+
       <StatusBanner
         message="Heads up: Quiet hours after 10pm. Thanks!"
         tone="info"
