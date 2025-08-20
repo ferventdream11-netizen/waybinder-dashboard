@@ -1,18 +1,16 @@
 import SectionCard from "../../components/SectionCard";
 
-// Minimal types that match Next.js App Router
-export default function GuidePage(
-  {
-    params,
-    searchParams,
-  }: {
-    params: { code: string };
-    searchParams?: { [key: string]: string | string[] | undefined };
-  }
-) {
-  const code = params.code;
-  const token = typeof searchParams?.token === "string" ? searchParams.token : "";
-  const pin = typeof searchParams?.pin === "string" ? searchParams.pin : "";
+export default async function GuidePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { code } = await params;
+  const sp = (await searchParams) ?? {};
+  const token = typeof sp.token === "string" ? sp.token : "";
+  const pin = typeof sp.pin === "string" ? sp.pin : "";
 
   return (
     <div
@@ -22,7 +20,6 @@ export default function GuidePage(
         gap: 16,
       }}
     >
-      {/* Status banner placeholder */}
       <section
         className="card"
         style={{
@@ -33,8 +30,8 @@ export default function GuidePage(
       >
         <h2>Guest Guide</h2>
         <p style={{ opacity: 0.8 }}>
-          This is your public link. Next we’ll validate token + PIN, add an offline badge,
-          and render real sections.
+          This is your public link. Next we’ll validate token + PIN, add an
+          offline badge, and render real sections.
         </p>
       </section>
 
