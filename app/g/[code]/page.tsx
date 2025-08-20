@@ -1,20 +1,18 @@
 import SectionCard from "../../components/SectionCard";
 
-type Props = {
-  params: { code: string };
-  searchParams: Record<string, string | string[] | undefined>;
-};
-
-/**
- * Public guide route
- * URL shape: /g/ABCDE?token=xyz&pin=1234
- * For now this just reads the URL and renders polished cards.
- * Next steps: wire Supabase + real content by code/token.
- */
-export default function GuidePage({ params, searchParams }: Props) {
-  const { code } = params;
-  const token = typeof searchParams.token === "string" ? searchParams.token : "";
-  const pin = typeof searchParams.pin === "string" ? searchParams.pin : "";
+// Minimal types that match Next.js App Router
+export default function GuidePage(
+  {
+    params,
+    searchParams,
+  }: {
+    params: { code: string };
+    searchParams?: { [key: string]: string | string[] | undefined };
+  }
+) {
+  const code = params.code;
+  const token = typeof searchParams?.token === "string" ? searchParams.token : "";
+  const pin = typeof searchParams?.pin === "string" ? searchParams.pin : "";
 
   return (
     <div
@@ -35,8 +33,8 @@ export default function GuidePage({ params, searchParams }: Props) {
       >
         <h2>Guest Guide</h2>
         <p style={{ opacity: 0.8 }}>
-          This is your public link. In the next steps we’ll validate token + PIN,
-          show the offline badge, and render real sections.
+          This is your public link. Next we’ll validate token + PIN, add an offline badge,
+          and render real sections.
         </p>
       </section>
 
