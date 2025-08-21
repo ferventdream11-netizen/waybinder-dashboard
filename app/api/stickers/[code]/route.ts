@@ -47,7 +47,7 @@ export async function GET(req: Request, context: unknown) {
   const fontTitle = await doc.embedFont(StandardFonts.TimesRomanBold);
   const fontBody = await doc.embedFont(StandardFonts.TimesRoman);
 
-  let page = doc.addPage([PAGE_W, PAGE_H]);
+  const page = doc.addPage([PAGE_W, PAGE_H]);
 
   // Helper to create the QR URL for a given label
   const origin = url.origin; // the current deployment domain
