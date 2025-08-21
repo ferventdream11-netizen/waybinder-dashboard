@@ -97,8 +97,8 @@ export async function GET(req: Request, context: unknown) {
   // Build a simple PDF (US Letter)
   const doc = await PDFDocument.create();
   let page = doc.addPage([612, 792]); // reassignable
-  const fontTitle = await doc.embedFont(StandardFonts.TimesBold);
-  const fontBody = await doc.embedFont(StandardFonts.TimesRoman);
+const fontTitle = await doc.embedFont(StandardFonts.TimesRomanBold);
+const fontBody  = await doc.embedFont(StandardFonts.TimesRoman);
 
   const left = 56;
   const right = 556;
