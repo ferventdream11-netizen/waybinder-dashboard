@@ -1,6 +1,7 @@
 import SectionCard from "../../components/SectionCard";
 import StatusBanner from "../../components/StatusBanner";
 import OfflineBadge from "../../components/OfflineBadge";
+import GuideHero from "../../components/GuideHero";
 
 export default async function GuidePage({
   params,
@@ -18,14 +19,18 @@ export default async function GuidePage({
 
   return (
     <>
-      {/* Offline badge at top-right */}
       <OfflineBadge />
 
-      {/* Status banner */}
       <StatusBanner
         message="Heads up: Quiet hours after 10pm. Thanks!"
         tone="info"
         untilISO={untilISO}
+      />
+
+      {/* Editorial hero */}
+      <GuideHero
+        title="Welcome to Bellflower Bungalow"
+        subtitle="Your stay • Check-in 3:00 pm • Wi-Fi details and house info below"
       />
 
       <div
