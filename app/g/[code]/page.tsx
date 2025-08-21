@@ -4,15 +4,36 @@ import OfflineBadge from "../../components/OfflineBadge";
 import GuideHero from "../../components/GuideHero";
 import { supabase } from "../../../lib/supabase";
 
-// Helpers
+// Row shapes from Supabase
+type GuideRow = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  theme: string | null;
+};
+
 type PageRow = { id: string; title: string; position: number };
+
+type BannerRow = {
+  message: string;
+  tone: "info" | "success" | "warning";
+  until: string | null;
+  is_active: boolean;
+};
+
 type BlockRow = {
   id: string;
   page_id: string;
-  kind: string;
-  content: any;
+  kind: "text" | "wifi" | "checkin" | (string & {});
+  content: Record<string, unknown> | null;
   position: number;
 };
+
+// Content helpers
+type TextContent = { html?: string };
+type WifiContent = { network?: string; password?: string };
+type CheckinContent = { address?: string; time?: string; door_code?: string };
 
 export default async function GuidePage({
   params,
@@ -26,7 +47,7 @@ export default async function GuidePage({
   const token = typeof sp.token === "string" ? sp.token : "";
   const pin = typeof sp.pin === "string" ? sp.pin : "";
 
-  // 1) Find the guide for this code
+  // 1) Resolve access link → guide id
   const { data: link, error: linkErr } = await supabase
     .from("access_links")
     .select("guide_id, token, pin, expires_at")
@@ -37,53 +58,58 @@ export default async function GuidePage({
     return (
       <div className="card">
         <h2>Not found</h2>
-        <p>There isn’t a guide for code <strong>{code}</strong> yet.</p>
+        <p>
+          There isn’t a guide for code <strong>{code}</strong> yet.
+        </p>
       </div>
     );
   }
 
-  const guideId = link.guide_id as string;
+  const guideId = String(link.guide_id);
 
-  // 2) Load guide meta
+  // 2) Guide meta
   const { data: guide } = await supabase
     .from("guides")
     .select("id, slug, title, subtitle, theme")
     .eq("id", guideId)
-    .single();
+    .single<GuideRow>();
 
-  // 3) Load pages + blocks
+  // 3) Pages + blocks
   const { data: pages = [] } = await supabase
     .from("pages")
     .select("id, title, position")
     .eq("guide_id", guideId)
-    .order("position", { ascending: true });
+    .order("position", { ascending: true }) as { data: PageRow[] | null };
 
-  const pageIds = pages.map((p) => p.id);
+  const pageIds: string[] = (pages ?? []).map((p) => p.id);
+
   const { data: blocks = [] } = pageIds.length
-    ? await supabase
+    ? ((await supabase
         .from("blocks")
         .select("id, page_id, kind, content, position")
         .in("page_id", pageIds)
-        .order("position", { ascending: true })
-    : { data: [] as BlockRow[] };
+        .order("position", { ascending: true })) as { data: BlockRow[] | null })
+    : ({ data: [] as BlockRow[] });
 
   // Group blocks by page
   const byPage = new Map<string, BlockRow[]>();
-  for (const b of blocks) {
+  for (const b of blocks ?? []) {
     const arr = byPage.get(b.page_id) ?? [];
     arr.push(b);
     byPage.set(b.page_id, arr);
   }
 
-  // 4) Pick an active banner (until in future or null)
-  const { data: bannerRows = [] } = await supabase
+  // 4) Active banner
+  const { data: bannerRows = [] } = (await supabase
     .from("banners")
     .select("message, tone, until, is_active")
     .eq("guide_id", guideId)
-    .eq("is_active", true);
+    .eq("is_active", true)) as { data: BannerRow[] | null };
 
   const now = Date.now();
-  const activeBanner = bannerRows.find((b) => !b.until || Date.parse(b.until as any) > now);
+  const activeBanner =
+    (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ??
+    null;
   const untilISO = activeBanner?.until ?? undefined;
 
   return (
@@ -93,14 +119,14 @@ export default async function GuidePage({
       {activeBanner ? (
         <StatusBanner
           message={activeBanner.message}
-          tone={(activeBanner.tone as any) ?? "info"}
+          tone={activeBanner.tone}
           untilISO={untilISO}
         />
       ) : null}
 
       <GuideHero
         title={guide?.title ?? "Guest Guide"}
-        subtitle={guide?.subtitle ?? ""}
+        subtitle={guide?.subtitle ?? undefined}
       />
 
       <div
@@ -110,7 +136,7 @@ export default async function GuidePage({
           gap: 16,
         }}
       >
-        {/* Show URL bits as a card so we can confirm params while testing */}
+        {/* URL bits for testing */}
         <SectionCard title="Booking Code" subtitle="From the URL">
           <p>
             <strong>code:</strong> {code}
@@ -124,7 +150,7 @@ export default async function GuidePage({
         </SectionCard>
 
         {/* Render each page with its blocks */}
-        {pages.map((p: PageRow) => {
+        {(pages ?? []).map((p) => {
           const items = byPage.get(p.id) ?? [];
           return (
             <SectionCard key={p.id} title={p.title}>
@@ -133,31 +159,34 @@ export default async function GuidePage({
               ) : (
                 items.map((b) => {
                   if (b.kind === "text") {
-                    return <p key={b.id}>{b.content?.html}</p>;
+                    const c = (b.content ?? {}) as TextContent;
+                    return <p key={b.id}>{c.html}</p>;
                   }
                   if (b.kind === "wifi") {
+                    const c = (b.content ?? {}) as WifiContent;
                     return (
                       <div key={b.id}>
                         <p>
-                          <strong>Network:</strong> {b.content?.network}
+                          <strong>Network:</strong> {c.network}
                         </p>
                         <p>
-                          <strong>Password:</strong> {b.content?.password}
+                          <strong>Password:</strong> {c.password}
                         </p>
                       </div>
                     );
                   }
                   if (b.kind === "checkin") {
+                    const c = (b.content ?? {}) as CheckinContent;
                     return (
                       <div key={b.id}>
                         <p>
-                          <strong>Address:</strong> {b.content?.address}
+                          <strong>Address:</strong> {c.address}
                         </p>
                         <p>
-                          <strong>Time:</strong> {b.content?.time}
+                          <strong>Time:</strong> {c.time}
                         </p>
                         <p>
-                          <strong>Door code:</strong> {b.content?.door_code}
+                          <strong>Door code:</strong> {c.door_code}
                         </p>
                       </div>
                     );
