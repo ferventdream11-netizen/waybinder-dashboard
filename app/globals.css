@@ -54,13 +54,25 @@ body {
 
 /* Header shell */
 .wb-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px;
+
+  padding: 14px 24px;
+
+  /* glassy look */
+  background: rgba(17, 22, 42, 0.7);           /* falls back nicely in light theme */
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+
   border-bottom: 1px solid var(--card-border);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
+
 .wb-logo { height: 28px; width: auto; }
 .wb-title { font-weight: 600; letter-spacing: 0.2px; }
 
