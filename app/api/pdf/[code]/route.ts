@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabase";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-// This route hits the DB per request
+// Route reads from DB per request
 export const dynamic = "force-dynamic";
 
 type GuideRow = {
@@ -42,14 +42,12 @@ function wrapText(
   return lines;
 }
 
-export async function GET(
-  req: Request,
-  { params }: { params: { code: string } }
-) {
-  const url = new URL(req.url);
+export async function GET(req: Request, context: unknown) {
+  // Narrow the route context safely without upsetting Next’s route types
+  const { params } = context as { params: { code: string } };
   const code = params.code;
 
-  // Optional watermark: ?guest=...&checkout=YYYY-MM-DD
+  const url = new URL(req.url);
   const guest = url.searchParams.get("guest") ?? "";
   const checkout = url.searchParams.get("checkout") ?? "";
 
