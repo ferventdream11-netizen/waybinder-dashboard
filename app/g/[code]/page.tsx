@@ -6,6 +6,7 @@ import PinGate from "../../components/PinGate";
 import { supabase } from "../../../lib/supabase";
 import PdfExport from "../../components/PdfExport";
 import StickerPrint from "../../components/StickerPrint";
+import LogView from "../../components/LogView";
 
 
 // Row shapes from Supabase
@@ -94,6 +95,7 @@ export default async function GuidePage({
     return (
       <>
         <OfflineBadge />
+<LogView code={code} />
         <PinGate
           code={code}
           hint="Enter the token and PIN from your message to view the guide."
