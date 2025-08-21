@@ -19,14 +19,14 @@
   --accent: var(--mint);
 }
 
-/* Light theme overrides */
+/* Light theme overrides — warm paper look */
 [data-theme="light"] {
-  --bg: #ffffff;
-  --fg: #0B1020;
-  --card-bg: #F6F8FF;
-  --card-border: rgba(10, 20, 40, 0.08);
-  --brand: var(--indigo);
-  --accent: var(--indigo);
+  --bg: #FAF8F6;                 /* warm paper */
+  --fg: #1F2430;                 /* soft ink */
+  --card-bg: #FFFFFF;            /* clean card */
+  --card-border: rgba(20, 20, 20, 0.08);
+  --brand: #1746D7;              /* refined indigo */
+  --accent: #1746D7;
 }
 
 /* Base reset-ish */
@@ -71,6 +71,18 @@ body {
 
   border-bottom: 1px solid var(--card-border);
   box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+/* Light mode header glass */
+[data-theme="light"] .wb-header {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+}
+
+/* Light mode card shadow — subtle */
+[data-theme="light"] .card {
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
 }
 
 .wb-logo { height: 28px; width: auto; }
