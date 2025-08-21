@@ -2,6 +2,7 @@ import SectionCard from "../../components/SectionCard";
 import StatusBanner from "../../components/StatusBanner";
 import OfflineBadge from "../../components/OfflineBadge";
 import GuideHero from "../../components/GuideHero";
+import PinGate from "../../components/PinGate";
 import { supabase } from "../../../lib/supabase";
 
 // Row shapes from Supabase
@@ -20,6 +21,13 @@ type BannerRow = {
   tone: "info" | "success" | "warning";
   until: string | null;
   is_active: boolean;
+};
+
+type AccessLinkRow = {
+  guide_id: string;
+  token: string | null;
+  pin: string | null;
+  expires_at: string | null;
 };
 
 type BlockRow = {
@@ -47,34 +55,60 @@ export default async function GuidePage({
   const token = typeof sp.token === "string" ? sp.token : "";
   const pin = typeof sp.pin === "string" ? sp.pin : "";
 
-  // 1) Resolve access link → guide id
+  // 1) Resolve access link → guide id + expected token/pin/expiry
   const { data: link, error: linkErr } = await supabase
     .from("access_links")
     .select("guide_id, token, pin, expires_at")
     .eq("code", code)
-    .maybeSingle();
+    .maybeSingle<AccessLinkRow>();
 
   if (linkErr || !link) {
     return (
       <div className="card">
         <h2>Not found</h2>
-        <p>
-          There isn’t a guide for code <strong>{code}</strong> yet.
-        </p>
+        <p>There isn’t a guide for code <strong>{code}</strong> yet.</p>
       </div>
+    );
+  }
+
+  // 2) Expiry check
+  const now = Date.now();
+  if (link.expires_at && Date.parse(link.expires_at) <= now) {
+    return (
+      <PinGate
+        code={code}
+        hint="This link has expired. Ask your host for a fresh link."
+      />
+    );
+  }
+
+  // 3) Token/PIN gating
+  const tokenOk = !link.token || token === link.token;
+  const pinOk = !link.pin || pin === link.pin;
+  const gated = !(tokenOk && pinOk);
+
+  if (gated) {
+    return (
+      <>
+        <OfflineBadge />
+        <PinGate
+          code={code}
+          hint="Enter the token and PIN from your message to view the guide."
+        />
+      </>
     );
   }
 
   const guideId = String(link.guide_id);
 
-  // 2) Guide meta
+  // 4) Guide meta
   const { data: guide } = await supabase
     .from("guides")
     .select("id, slug, title, subtitle, theme")
     .eq("id", guideId)
     .single<GuideRow>();
 
-  // 3) Pages + blocks
+  // 5) Pages + blocks
   const { data: pages = [] } = await supabase
     .from("pages")
     .select("id, title, position")
@@ -99,14 +133,13 @@ export default async function GuidePage({
     byPage.set(b.page_id, arr);
   }
 
-  // 4) Active banner
+  // 6) Active banner
   const { data: bannerRows = [] } = (await supabase
     .from("banners")
     .select("message, tone, until, is_active")
     .eq("guide_id", guideId)
     .eq("is_active", true)) as { data: BannerRow[] | null };
 
-  const now = Date.now();
   const activeBanner =
     (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ??
     null;
@@ -136,20 +169,13 @@ export default async function GuidePage({
           gap: 16,
         }}
       >
-        {/* URL bits for testing */}
+        {/* Keep URL debug for now while testing */}
         <SectionCard title="Booking Code" subtitle="From the URL">
-          <p>
-            <strong>code:</strong> {code}
-          </p>
-          <p>
-            <strong>token:</strong> {token || "—"}
-          </p>
-          <p>
-            <strong>pin:</strong> {pin || "—"}
-          </p>
+          <p><strong>code:</strong> {code}</p>
+          <p><strong>token:</strong> {token || "—"}</p>
+          <p><strong>pin:</strong> {pin || "—"}</p>
         </SectionCard>
 
-        {/* Render each page with its blocks */}
         {(pages ?? []).map((p) => {
           const items = byPage.get(p.id) ?? [];
           return (
@@ -166,12 +192,8 @@ export default async function GuidePage({
                     const c = (b.content ?? {}) as WifiContent;
                     return (
                       <div key={b.id}>
-                        <p>
-                          <strong>Network:</strong> {c.network}
-                        </p>
-                        <p>
-                          <strong>Password:</strong> {c.password}
-                        </p>
+                        <p><strong>Network:</strong> {c.network}</p>
+                        <p><strong>Password:</strong> {c.password}</p>
                       </div>
                     );
                   }
@@ -179,19 +201,12 @@ export default async function GuidePage({
                     const c = (b.content ?? {}) as CheckinContent;
                     return (
                       <div key={b.id}>
-                        <p>
-                          <strong>Address:</strong> {c.address}
-                        </p>
-                        <p>
-                          <strong>Time:</strong> {c.time}
-                        </p>
-                        <p>
-                          <strong>Door code:</strong> {c.door_code}
-                        </p>
+                        <p><strong>Address:</strong> {c.address}</p>
+                        <p><strong>Time:</strong> {c.time}</p>
+                        <p><strong>Door code:</strong> {c.door_code}</p>
                       </div>
                     );
                   }
-                  // Fallback for unknown kinds
                   return (
                     <pre key={b.id} style={{ whiteSpace: "pre-wrap" }}>
                       {JSON.stringify(b.content, null, 2)}
