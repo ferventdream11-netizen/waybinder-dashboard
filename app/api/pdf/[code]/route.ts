@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabase";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-// Keep this dynamic because we read from the DB per request
+// This route hits the DB per request
 export const dynamic = "force-dynamic";
 
 type GuideRow = {
@@ -22,15 +22,18 @@ type BlockRow = {
   position: number;
 };
 
-function wrapText(text: string, maxWidth: number, measure: (s: string) => number) {
+function wrapText(
+  text: string,
+  maxWidth: number,
+  measure: (s: string) => number
+) {
   const words = text.split(/\s+/);
   const lines: string[] = [];
   let line = "";
   for (const w of words) {
     const test = line ? line + " " + w : w;
-    if (measure(test) <= maxWidth) {
-      line = test;
-    } else {
+    if (measure(test) <= maxWidth) line = test;
+    else {
       if (line) lines.push(line);
       line = w;
     }
@@ -46,7 +49,7 @@ export async function GET(
   const url = new URL(req.url);
   const code = params.code;
 
-  // Optional watermark info via query: ?guest=...&checkout=YYYY-MM-DD
+  // Optional watermark: ?guest=...&checkout=YYYY-MM-DD
   const guest = url.searchParams.get("guest") ?? "";
   const checkout = url.searchParams.get("checkout") ?? "";
 
@@ -93,17 +96,15 @@ export async function GET(
     byPage.set(b.page_id, arr);
   }
 
-  // Build a simple PDF
+  // Build a simple PDF (US Letter)
   const doc = await PDFDocument.create();
-  const page = doc.addPage([612, 792]); // US Letter points
-  const { width } = page.getSize();
-
+  let page = doc.addPage([612, 792]); // reassignable
   const fontTitle = await doc.embedFont(StandardFonts.TimesBold);
   const fontBody = await doc.embedFont(StandardFonts.TimesRoman);
 
-  let y = 742; // start from top margin
   const left = 56;
   const right = 556;
+  let y = 742;
 
   // Title
   const title = guide?.title ?? "Guest Guide";
@@ -124,20 +125,30 @@ export async function GET(
       (s) => fontBody.widthOfTextAtSize(s, 12)
     );
     for (const line of lines) {
-      page.drawText(line, { x: left, y, size: 12, font: fontBody, color: rgb(0.15, 0.15, 0.15) });
+      page.drawText(line, {
+        x: left,
+        y,
+        size: 12,
+        font: fontBody,
+        color: rgb(0.15, 0.15, 0.15),
+      });
       y -= 16;
     }
     y -= 6;
   }
 
+  // Helper to add a fresh page and reset cursor
+  const addPage = () => {
+    page = doc.addPage([612, 792]);
+    y = 742;
+  };
+
   // Render each page section
   for (const p of pages ?? []) {
-    // Section heading
-    const heading = p.title;
     y -= 10;
-    if (y < 100) { y = addPage(doc, fontBody); }
+    if (y < 100) addPage();
 
-    page.drawText(heading, {
+    page.drawText(p.title, {
       x: left,
       y,
       size: 16,
@@ -149,9 +160,13 @@ export async function GET(
     const items = byPage.get(p.id) ?? [];
     for (const b of items) {
       const text = formatBlock(b);
-      const lines = wrapText(text, right - left, (s) => fontBody.widthOfTextAtSize(s, 12));
+      const lines = wrapText(
+        text,
+        right - left,
+        (s) => fontBody.widthOfTextAtSize(s, 12)
+      );
       for (const line of lines) {
-        if (y < 72) { y = addPage(doc, fontBody); }
+        if (y < 72) addPage();
         page.drawText(line, {
           x: left,
           y,
@@ -186,13 +201,6 @@ export async function GET(
       "Cache-Control": "private, max-age=0, no-store",
     },
   });
-
-  // helpers
-  function addPage(d: PDFDocument, f: any) {
-    const p = d.addPage([612, 792]);
-    (page as any) = p; // reassign outer page
-    return 742;
-  }
 
   function formatBlock(b: BlockRow): string {
     const c = (b.content ?? {}) as Record<string, unknown>;
