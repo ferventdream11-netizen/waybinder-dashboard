@@ -4,6 +4,7 @@ import OfflineBadge from "../../components/OfflineBadge";
 import GuideHero from "../../components/GuideHero";
 import PinGate from "../../components/PinGate";
 import { supabase } from "../../../lib/supabase";
+import PdfExport from "../../components/PdfExport";
 
 // Row shapes from Supabase
 type GuideRow = {
@@ -148,6 +149,7 @@ export default async function GuidePage({
   return (
     <>
       <OfflineBadge />
+<PdfExport code={code} />
 
       {activeBanner ? (
         <StatusBanner
