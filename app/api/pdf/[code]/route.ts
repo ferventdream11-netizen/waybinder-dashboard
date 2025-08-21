@@ -191,8 +191,10 @@ const fontBody  = await doc.embedFont(StandardFonts.TimesRoman);
   }
 
 const bytes = await doc.save();
-const pdf = new Blob([bytes], { type: "application/pdf" });
-return new NextResponse(pdf, {
+// Convert the Uint8Array view to an exact ArrayBuffer
+const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+
+return new NextResponse(ab, {
   status: 200,
   headers: {
     "Content-Type": "application/pdf",
@@ -200,6 +202,7 @@ return new NextResponse(pdf, {
     "Cache-Control": "private, max-age=0, no-store",
   },
 });
+
 
 
   function formatBlock(b: BlockRow): string {
