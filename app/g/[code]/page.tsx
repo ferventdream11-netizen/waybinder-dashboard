@@ -9,7 +9,6 @@ import StickerPrint from "../../components/StickerPrint";
 import LogView from "../../components/LogView";
 import AnalyticsPing from "../../components/AnalyticsPing";
 
-
 // Row shapes from Supabase
 type GuideRow = {
   id: string;
@@ -71,7 +70,9 @@ export default async function GuidePage({
     return (
       <div className="card">
         <h2>Not found</h2>
-        <p>There isn’t a guide for code <strong>{code}</strong> yet.</p>
+        <p>
+          There isn’t a guide for code <strong>{code}</strong> yet.
+        </p>
       </div>
     );
   }
@@ -115,11 +116,11 @@ export default async function GuidePage({
     .single<GuideRow>();
 
   // 5) Pages + blocks
-  const { data: pages = [] } = await supabase
+  const { data: pages = [] } = (await supabase
     .from("pages")
     .select("id, title, position")
     .eq("guide_id", guideId)
-    .order("position", { ascending: true }) as { data: PageRow[] | null };
+    .order("position", { ascending: true })) as { data: PageRow[] | null };
 
   const pageIds: string[] = (pages ?? []).map((p) => p.id);
 
@@ -147,17 +148,18 @@ export default async function GuidePage({
     .eq("is_active", true)) as { data: BannerRow[] | null };
 
   const activeBanner =
-    (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ??
-    null;
+    (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ?? null;
   const untilISO = activeBanner?.until ?? undefined;
 
   return (
     <>
+      {/* Client-side analytics ping (fires once per view) */}
+      <AnalyticsPing code={code} />
+
+      {/* Top bar: offline badge + quick actions */}
       <OfflineBadge />
       <PdfExport code={code} />
       <StickerPrint code={code} />
-<AnalyticsPing code={code} />
-
 
       {activeBanner ? (
         <StatusBanner
@@ -181,9 +183,15 @@ export default async function GuidePage({
       >
         {/* Keep URL debug for now while testing */}
         <SectionCard title="Booking Code" subtitle="From the URL">
-          <p><strong>code:</strong> {code}</p>
-          <p><strong>token:</strong> {token || "—"}</p>
-          <p><strong>pin:</strong> {pin || "—"}</p>
+          <p>
+            <strong>code:</strong> {code}
+          </p>
+          <p>
+            <strong>token:</strong> {token || "—"}
+          </p>
+          <p>
+            <strong>pin:</strong> {pin || "—"}
+          </p>
         </SectionCard>
 
         {(pages ?? []).map((p) => {
@@ -202,8 +210,12 @@ export default async function GuidePage({
                     const c = (b.content ?? {}) as WifiContent;
                     return (
                       <div key={b.id}>
-                        <p><strong>Network:</strong> {c.network}</p>
-                        <p><strong>Password:</strong> {c.password}</p>
+                        <p>
+                          <strong>Network:</strong> {c.network}
+                        </p>
+                        <p>
+                          <strong>Password:</strong> {c.password}
+                        </p>
                       </div>
                     );
                   }
@@ -211,9 +223,15 @@ export default async function GuidePage({
                     const c = (b.content ?? {}) as CheckinContent;
                     return (
                       <div key={b.id}>
-                        <p><strong>Address:</strong> {c.address}</p>
-                        <p><strong>Time:</strong> {c.time}</p>
-                        <p><strong>Door code:</strong> {c.door_code}</p>
+                        <p>
+                          <strong>Address:</strong> {c.address}
+                        </p>
+                        <p>
+                          <strong>Time:</strong> {c.time}
+                        </p>
+                        <p>
+                          <strong>Door code:</strong> {c.door_code}
+                        </p>
                       </div>
                     );
                   }
