@@ -18,8 +18,10 @@ export default async function GuidePage({
 
   return (
     <>
+      {/* Offline badge at top-right */}
       <OfflineBadge />
 
+      {/* Status banner */}
       <StatusBanner
         message="Heads up: Quiet hours after 10pm. Thanks!"
         tone="info"
