@@ -7,6 +7,8 @@ import { supabase } from "../../../lib/supabase";
 import PdfExport from "../../components/PdfExport";
 import StickerPrint from "../../components/StickerPrint";
 import LogView from "../../components/LogView";
+import AnalyticsPing from "../../components/AnalyticsPing";
+
 
 // Row shapes from Supabase
 type GuideRow = {
@@ -154,6 +156,8 @@ export default async function GuidePage({
       <OfflineBadge />
       <PdfExport code={code} />
       <StickerPrint code={code} />
+<AnalyticsPing code={code} />
+
 
       {activeBanner ? (
         <StatusBanner
