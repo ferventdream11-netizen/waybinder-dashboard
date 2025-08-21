@@ -1,3 +1,5 @@
+// app/g/[code]/page.tsx
+
 import SectionCard from "../../components/SectionCard";
 import StatusBanner from "../../components/StatusBanner";
 import OfflineBadge from "../../components/OfflineBadge";
@@ -9,7 +11,11 @@ import StickerPrint from "../../components/StickerPrint";
 import LogView from "../../components/LogView";
 import AnalyticsPing from "../../components/AnalyticsPing";
 
-// Row shapes from Supabase
+// ensure we don’t serve a stale SSR cache for time-sensitive / gated pages
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
+
+// ---- Row shapes from Supabase ----
 type GuideRow = {
   id: string;
   slug: string;
@@ -42,7 +48,7 @@ type BlockRow = {
   position: number;
 };
 
-// Content helpers
+// ---- Content helpers ----
 type TextContent = { html?: string };
 type WifiContent = { network?: string; password?: string };
 type CheckinContent = { address?: string; time?: string; door_code?: string };
@@ -51,11 +57,11 @@ export default async function GuidePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ code: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  params: { code: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const { code } = await params;
-  const sp = (await searchParams) ?? {};
+  const { code } = params;
+  const sp = searchParams ?? {};
   const token = typeof sp.token === "string" ? sp.token : "";
   const pin = typeof sp.pin === "string" ? sp.pin : "";
 
@@ -81,10 +87,7 @@ export default async function GuidePage({
   const now = Date.now();
   if (link.expires_at && Date.parse(link.expires_at) <= now) {
     return (
-      <PinGate
-        code={code}
-        hint="This link has expired. Ask your host for a fresh link."
-      />
+      <PinGate code={code} hint="This link has expired. Ask your host for a fresh link." />
     );
   }
 
@@ -94,6 +97,7 @@ export default async function GuidePage({
   const gated = !(tokenOk && pinOk);
 
   if (gated) {
+    // Gate shows the PIN form and (optionally) a log view in your build.
     return (
       <>
         <OfflineBadge />
@@ -151,15 +155,13 @@ export default async function GuidePage({
     (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ?? null;
   const untilISO = activeBanner?.until ?? undefined;
 
+  // ---- Render (now includes AnalyticsPing so the guide itself posts a view) ----
   return (
     <>
-      {/* Client-side analytics ping (fires once per view) */}
-      <AnalyticsPing code={code} />
-
-      {/* Top bar: offline badge + quick actions */}
       <OfflineBadge />
       <PdfExport code={code} />
       <StickerPrint code={code} />
+      <AnalyticsPing code={code} />
 
       {activeBanner ? (
         <StatusBanner
