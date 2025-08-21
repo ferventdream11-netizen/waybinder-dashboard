@@ -3,13 +3,11 @@ const CACHE_NAME = 'wb-offline-v1';
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 self.addEventListener('install', (event) => {
-  // Take control immediately
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME)); // warm cache handle
+  event.waitUntil(caches.open(CACHE_NAME));
 });
 
 self.addEventListener('activate', (event) => {
-  // Claim pages + drop old caches
   event.waitUntil((async () => {
     await self.clients.claim();
     const keys = await caches.keys();
@@ -33,6 +31,25 @@ async function putWithStamp(cache, req, res) {
   await cache.put(req, stamped);
 }
 
+/** Handle a message from the page to pre-cache a given URL */
+self.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || data.type !== 'PRECACHE_URL') return;
+  const url = data.url;
+  if (!url) return;
+
+  event.waitUntil((async () => {
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const req = new Request(url, { method: 'GET', credentials: 'same-origin' });
+      const res = await fetch(req);
+      await putWithStamp(cache, req, res);
+    } catch {
+      // ignore
+    }
+  })());
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -43,11 +60,9 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // For navigations: network-first, fall back to cache, then tiny offline page
     if (req.mode === 'navigate') {
       try {
         const net = await fetch(req);
-        // Cache a fresh copy for offline
         putWithStamp(cache, req, net.clone()).catch(() => {});
         return net;
       } catch {
@@ -64,34 +79,30 @@ self.addEventListener('fetch', (event) => {
       }
     }
 
-    // For other same-origin GETs: stale-while-revalidate with 7-day TTL
+    // SWR with TTL for other GETs
     const cached = await cache.match(req);
     if (cached) {
       const stamp = Number(cached.headers.get('X-SW-Cached-At') || '0');
       const freshEnough = stamp && (Date.now() - stamp) < TTL_MS;
 
-      // Kick off a background refresh
       fetch(req)
         .then((net) => putWithStamp(cache, req, net))
         .catch(() => {});
 
-      // Serve cached if within TTL; otherwise try network first
       if (freshEnough) return cached;
       try {
         const net = await fetch(req);
         await putWithStamp(cache, req, net.clone());
         return net;
       } catch {
-        return cached; // last-resort stale
+        return cached;
       }
     } else {
-      // No cache yet → fetch and store
       try {
         const net = await fetch(req);
         await putWithStamp(cache, req, net.clone());
         return net;
       } catch {
-        // Nothing cached and network failed
         return new Response('Offline', { status: 503, statusText: 'Offline' });
       }
     }
