@@ -8,7 +8,6 @@ import PdfExport from "../../components/PdfExport";
 import StickerPrint from "../../components/StickerPrint";
 import LogView from "../../components/LogView";
 
-
 // Row shapes from Supabase
 type GuideRow = {
   id: string;
@@ -95,7 +94,7 @@ export default async function GuidePage({
     return (
       <>
         <OfflineBadge />
-<LogView code={code} />
+        <LogView code={code} />
         <PinGate
           code={code}
           hint="Enter the token and PIN from your message to view the guide."
@@ -153,8 +152,8 @@ export default async function GuidePage({
   return (
     <>
       <OfflineBadge />
-<PdfExport code={code} />
-<StickerPrint code={code} />
+      <PdfExport code={code} />
+      <StickerPrint code={code} />
 
       {activeBanner ? (
         <StatusBanner

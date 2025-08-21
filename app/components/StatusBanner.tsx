@@ -1,34 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
+import UntilTime from './UntilTime';
 
-type Tone = 'info' | 'success' | 'warning';
-
-export default function StatusBanner({
-  message,
-  tone = 'info',
-  untilISO,
-}: {
+type Props = {
   message: string;
-  tone?: Tone;
-  /** If set, banner hides itself after this UTC time */
-  untilISO?: string;
-}) {
-  const expired = useMemo(() => {
-    if (!untilISO) return false;
-    const t = Date.parse(untilISO);
-    return Number.isFinite(t) ? Date.now() > t : false;
-  }, [untilISO]);
+  tone?: 'info' | 'success' | 'warning';
+  untilISO?: string; // ISO string from the server (or undefined)
+};
 
-  if (expired) return null;
-
-  const colors: Record<Tone, { stripe: string; text: string; bg: string; border: string }> = {
-    info:    { stripe: 'var(--sky)',   text: 'var(--fg)', bg: 'var(--card-bg)', border: 'var(--card-border)' },
-    success: { stripe: 'var(--mint)',  text: 'var(--fg)', bg: 'var(--card-bg)', border: 'var(--card-border)' },
-    warning: { stripe: '#F4D24B',      text: 'var(--fg)', bg: 'var(--card-bg)', border: 'var(--card-border)' },
-  };
-
-  const c = colors[tone];
+export default function StatusBanner({ message, tone = 'info', untilISO }: Props) {
+  const border =
+    tone === 'success'
+      ? 'var(--success, #39D98A)'
+      : tone === 'warning'
+      ? 'var(--warning, #F7B955)'
+      : 'var(--card-border, rgba(255,255,255,.12))';
 
   return (
     <div
@@ -39,19 +25,23 @@ export default function StatusBanner({
         alignItems: 'center',
         gap: 12,
         padding: '12px 16px',
-        border: `1px solid ${c.border}`,
-        background: c.bg,
         borderRadius: 12,
-        boxShadow: '0 10px 24px rgba(0,0,0,0.18)',
-        margin: '16px 0 20px',
+        border: `1px solid ${border}`,
+        background: 'var(--card-bg, rgba(255,255,255,.04))',
+        margin: '12px 0 20px',
+        boxShadow: '0 10px 24px rgba(0,0,0,.18)',
       }}
     >
-      <div style={{ width: 6, alignSelf: 'stretch', borderRadius: 6, background: c.stripe }} />
-      <div style={{ color: c.text }}>{message}</div>
+      <span style={{ fontWeight: 600 }}>{message}</span>
+
       {untilISO ? (
-        <div style={{ marginLeft: 'auto', opacity: 0.7, fontSize: 12 }}>
-          until {new Date(untilISO).toLocaleString()}
-        </div>
+        <small
+          style={{ marginLeft: 'auto', opacity: 0.7 }}
+          // allow text to differ between SSR and client; client value is authoritative
+          suppressHydrationWarning
+        >
+          until <UntilTime iso={untilISO} />
+        </small>
       ) : null}
     </div>
   );
