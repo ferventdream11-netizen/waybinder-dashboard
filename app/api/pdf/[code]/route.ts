@@ -190,15 +190,17 @@ const fontBody  = await doc.embedFont(StandardFonts.TimesRoman);
     });
   }
 
-  const bytes = await doc.save();
-  return new NextResponse(bytes, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${(guide?.slug ?? code)}.pdf"`,
-      "Cache-Control": "private, max-age=0, no-store",
-    },
-  });
+const bytes = await doc.save();
+const pdf = new Blob([bytes], { type: "application/pdf" });
+return new NextResponse(pdf, {
+  status: 200,
+  headers: {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${(guide?.slug ?? code)}.pdf"`,
+    "Cache-Control": "private, max-age=0, no-store",
+  },
+});
+
 
   function formatBlock(b: BlockRow): string {
     const c = (b.content ?? {}) as Record<string, unknown>;
