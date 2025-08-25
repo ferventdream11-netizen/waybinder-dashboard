@@ -1,5 +1,3 @@
-// app/g/[code]/page.tsx
-
 import SectionCard from "../../components/SectionCard";
 import StatusBanner from "../../components/StatusBanner";
 import OfflineBadge from "../../components/OfflineBadge";
@@ -9,13 +7,8 @@ import { supabase } from "../../../lib/supabase";
 import PdfExport from "../../components/PdfExport";
 import StickerPrint from "../../components/StickerPrint";
 import LogView from "../../components/LogView";
-import AnalyticsPing from "../../components/AnalyticsPing";
 
-// ensure we don’t serve a stale SSR cache for time-sensitive / gated pages
-export const revalidate = 0;
-export const dynamic = "force-dynamic";
-
-// ---- Row shapes from Supabase ----
+// Row shapes from Supabase
 type GuideRow = {
   id: string;
   slug: string;
@@ -48,7 +41,7 @@ type BlockRow = {
   position: number;
 };
 
-// ---- Content helpers ----
+// Content helpers
 type TextContent = { html?: string };
 type WifiContent = { network?: string; password?: string };
 type CheckinContent = { address?: string; time?: string; door_code?: string };
@@ -87,7 +80,10 @@ export default async function GuidePage({
   const now = Date.now();
   if (link.expires_at && Date.parse(link.expires_at) <= now) {
     return (
-      <PinGate code={code} hint="This link has expired. Ask your host for a fresh link." />
+      <PinGate
+        code={code}
+        hint="This link has expired. Ask your host for a fresh link."
+      />
     );
   }
 
@@ -97,7 +93,6 @@ export default async function GuidePage({
   const gated = !(tokenOk && pinOk);
 
   if (gated) {
-    // Gate shows the PIN form and (optionally) a log view in your build.
     return (
       <>
         <OfflineBadge />
@@ -111,6 +106,25 @@ export default async function GuidePage({
   }
 
   const guideId = String(link.guide_id);
+
+  // 3.5) Fire a tiny view analytic (server-side call to our own API)
+  try {
+    const base =
+      process.env.VERCEL_URL?.startsWith("http")
+        ? process.env.VERCEL_URL
+        : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+
+    await fetch(`${base}/api/analytics/view`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code }),
+      cache: "no-store",
+    });
+  } catch {
+    // swallow analytics errors
+  }
 
   // 4) Guide meta
   const { data: guide } = await supabase
@@ -133,7 +147,9 @@ export default async function GuidePage({
         .from("blocks")
         .select("id, page_id, kind, content, position")
         .in("page_id", pageIds)
-        .order("position", { ascending: true })) as { data: BlockRow[] | null })
+        .order("position", { ascending: true })) as {
+        data: BlockRow[] | null;
+      })
     : ({ data: [] as BlockRow[] });
 
   // Group blocks by page
@@ -152,16 +168,15 @@ export default async function GuidePage({
     .eq("is_active", true)) as { data: BannerRow[] | null };
 
   const activeBanner =
-    (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ?? null;
+    (bannerRows ?? []).find((b) => !b.until || Date.parse(b.until) > now) ??
+    null;
   const untilISO = activeBanner?.until ?? undefined;
 
-  // ---- Render (now includes AnalyticsPing so the guide itself posts a view) ----
   return (
     <>
       <OfflineBadge />
       <PdfExport code={code} />
       <StickerPrint code={code} />
-      <AnalyticsPing code={code} />
 
       {activeBanner ? (
         <StatusBanner
